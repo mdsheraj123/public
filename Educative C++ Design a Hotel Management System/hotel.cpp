@@ -45,6 +45,7 @@ class Hotel {
     string name;
     Hotel(string n):name(n){};
     map<string,Room*> emptyRooms;
+    map<string,Room*> bookedRooms;
     map<string,Admin*> admins;
     map<string,Guest*> guests;
     void addAdmin(string id);
@@ -53,6 +54,7 @@ class Hotel {
 class Room {
     public:
     string roomName;
+    string user;
     Room(string n):roomName(n) {};
 };
 
@@ -65,9 +67,9 @@ class Deluxe:public Room {
 
 class Account {
     public:
-    string id;
+    string userid;
     Hotel* hotel;
-    Account(Hotel* hotel,string id):hotel(hotel),id(id) {};
+    Account(Hotel* hotel,string id):hotel(hotel),userid(id) {};
 };
 
 class Guest:public Account {
@@ -102,7 +104,15 @@ class Booking {
     int checkinTime;
     int checkoutTime;
     vector<Room*> bookedRooms;
-    Booking(int in,int out,vector<Room*> r):checkinTime(in),checkoutTime(out), bookedRooms(r) {};
+    Hotel* hotel;
+    string userid;
+    Booking(Hotel* h,string userid,int in,int out,vector<Room*> r):hotel(h),userid(userid),checkinTime(in),checkoutTime(out), bookedRooms(r) {
+        for(auto i:r) {
+            i->user = userid;
+            h->bookedRooms[i->roomName] = i;
+            h->emptyRooms.erase(i->roomName);
+        }
+    };
 };
 
 
@@ -117,7 +127,7 @@ void Hotel::addGuest(string id) {
     guests[id] = temp;
 }
 void Guest::addBooking(int in, int out,vector<Room*> r) {
-    Booking* temp = new Booking(in,out,r);
+    Booking* temp = new Booking(hotel,userid,in,out,r);
     bookings.push_back(temp);
 }
 
