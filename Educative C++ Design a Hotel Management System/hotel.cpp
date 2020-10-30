@@ -33,198 +33,94 @@
 // #include <thread> // std::thread
 // #include <mutex> // std::mutex
 using namespace std;
-/////////////////////////////////////////////////////////////////////////
-class RoomBooking;
-class RoomKey;
+///////////////////////////////////////////////////////////////////////////make private later
+
 class Room;
-class RoomCharge;
-class RoomHouseKeeping;
-////////////////////////////////
-enum RoomStyle {
-  STANDARD, DELUXE, FAMILY_SUITE, BUSINESS_SUITE
-};
-
-enum RoomStatus {
-  AVAILABLE, RESERVED, OCCUPIED, NOT_AVAILABLE, BEING_SERVICED, OTHER
-};
-
-enum BookingStatus {
-  REQUESTED, PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, ABANDONED
-};
-
-enum AccountStatus {
-  ACTIVE, CLOSED, CANCELED, BLACKLISTED, BLOCKED
-};
-
-enum AccountType {
-  MEMBER, GUEST, MANAGER, RECEPTIONIST
-};
-
-enum PaymentStatus {
-  UNPAID, PPENDING, COMPLETED, FILLED, DECLINED, PCANCELLED, PABANDONED, SETTLING, SETTLED, REFUNDED
-};
-
-enum Date {
-    FIRST,SECOND,THIRD
-};
-
-class Address {
-    private:
-    string streetAddress;
-    string city;
-    string state;
-    string zipCode;
-    string country;
-};
-/////////////////////////////////////////////////////
-class Account {
-    private:
-    string id;
-    string password;
-    AccountStatus status;
-    public:
-    bool resetPassword();
-};
-
-class Person {
-    private:
-    string name;
-    Address address;
-    string email;
-    string phone;
-    Account account;
-};
-class Member:public Person {
-    private:
-    int totalRoomsCheckedIn;
-    public:
-    vector<RoomBooking> getBookings();
-};
-
-class Guest:public Person {
-    private:
-    int totalRoomsCheckedIn;
-    public:
-    vector<RoomBooking> getBookings();
-};
-
-class Receptionist:public Person {
-    public:
-    vector<Member> searchMember(string name);
-    bool createBooking();
-};
-
-class Server:public Person {
-    public:
-    bool addRoomCharge(Room room, RoomCharge roomCharge);
-};
-class HouseKeeper:public Person {
-    public:
-    bool assignToRoom(Room room);
-};
-///////////////////////////////////////////////
-class HotelLocation {
-    private:
-    string name;
-    Address location;
-    public:
-    Address getRooms();
-};
-
+class Admin;
+class Guest;
+class Booking;
+//////////////////////////
 class Hotel {
-    private:
-    string name;
-    vector<HotelLocation> locations;
-    public:
-    bool addLocation(HotelLocation location);
-};
-/////////////////////////////////////////////////
-class Search {
-    public:
-    static vector<Room> search(RoomStyle style, Date startDate, int duration);
-};
-
-class Room:public Search {
-    private:
-    string roomNumber;
-    RoomStyle style;
-    RoomStatus status;
-    double bookingPrice;
-    bool isSmoking;
-
-    vector<RoomKey> keys;
-    vector<RoomHouseKeeping> houseKeepingLog;
-    public:
-    bool isRoomAvailable();
-    bool checkIn();
-    bool checkOut();
-
-    static vector<Room> search(RoomStyle style, Date startDate, int duration) {
-    // return all rooms with the given style and availability
-  }
-};
-
-class RoomKey {
-    private:
-    string keyId;
-    string barcode;
-    Date issuedAt;
-    bool active;
-    bool isMaster;
-    public:
-    bool assignRoom(Room room);
-    bool isActive();
-};
-
-class RoomHouseKeeping {
-    private:
-    string description;
-    Date startDatetime;
-    int duration;
-    HouseKeeper houseKeeper;
-    public:
-    bool addHouseKeeping(Room room);
-};
-//////////////////////////////////////////////
-class RoomBooking {
-    private:
-    string reservationNumber;
-    Date startDate;
-    int durationInDays;
-    BookingStatus status;
-    Date checkin;
-    Date checkout;
-
-    int guestID;
-    Room room;
-    Invoice invoice;
-    vector<Notification> notifications;
-    public:
-    static RoomBooking fectchDetails(string reservationNumber);
-};
-
-class RoomCharge {
-    public:
-    Date issueAt;
-    bool addInvoiceItem(Invoice invoice);
-};
-
-class Amenity:public RoomCharge {
     public:
     string name;
-    string description;
+    Hotel(string n):name(n){};
+    map<string,Room*> emptyRooms;
+    map<string,Admin*> admins;
+    map<string,Guest*> guests;
+    void addAdmin(string id);
+    void addGuest(string id);
+};
+class Room {
+    public:
+    string roomName;
+    Room(string n):roomName(n) {};
 };
 
-class RoomService:public RoomCharge {
-    public:
-    bool isChargeable;
-    Date requestTime;
+class Standard:public Room {
+
+};
+class Deluxe:public Room {
+
 };
 
-class KitchenService:public RoomCharge {
+class Account {
     public:
-    string description;
+    string id;
+    Hotel* hotel;
+    Account(Hotel* hotel,string id):hotel(hotel),id(id) {};
 };
+
+class Guest:public Account {
+    public:
+    vector<Booking*> bookings;
+
+    Guest(Hotel* hotel,string id):Account(hotel,id){};
+
+    vector<Room*> searchEmptyRooms() {
+        vector<Room*> temp;
+        for(auto i:hotel->emptyRooms) {
+            temp.push_back(i.second);
+            cout<<i.second->roomName<<endl;
+        }
+        return temp;
+    }
+
+    void addBooking(int in, int out,vector<Room*> r);
+};
+
+class Admin:public Account {
+    public:
+    Admin(Hotel* hotel,string id):Account(hotel,id){};
+    void addRoom(string n) {
+        Room* temp = new Room(n);
+        hotel->emptyRooms[n] = temp;
+    }
+};
+
+class Booking {
+    public:
+    int checkinTime;
+    int checkoutTime;
+    vector<Room*> bookedRooms;
+    Booking(int in,int out,vector<Room*> r):checkinTime(in),checkoutTime(out), bookedRooms(r) {};
+};
+
+
+
+///////////////////////////////////////////////
+void Hotel::addAdmin(string id) {
+    Admin* temp  =new Admin(this,id);
+    admins[id] = temp;
+}
+void Hotel::addGuest(string id) {
+    Guest* temp  =new Guest(this,id);
+    guests[id] = temp;
+}
+void Guest::addBooking(int in, int out,vector<Room*> r) {
+    Booking* temp = new Booking(in,out,r);
+    bookings.push_back(temp);
+}
+
 //////////////////////////////////////////////
 int main() {
     ios_base::sync_with_stdio(0);
@@ -237,6 +133,15 @@ int main() {
     // cin>>T;
     // for(int test_case = 1;test_case<=T;test_case++) {
     // }
+    Hotel h("Grande");
+    h.addAdmin("Boss");
 
+    h.admins["Boss"]->addRoom("A1");
+    h.admins["Boss"]->addRoom("B2");
+    h.admins["Boss"]->addRoom("C3");
+
+    h.addGuest("Russian");
+
+    h.guests["Russian"]->addBooking(10,11,h.guests["Russian"]->searchEmptyRooms());
 
 }
