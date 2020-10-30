@@ -33,13 +33,15 @@
 // #include <thread> // std::thread
 // #include <mutex> // std::mutex
 using namespace std;
-///////////////////////////////////////////////////////////////////////////make private later
+///////////////////////////////////////////////////////////////////////////make private later //add Invoice
 
 class Room;
 class Admin;
 class Guest;
 class Booking;
 class Payment;
+class Invoice;
+class Cash;
 class Notification;
 //////////////////////////
 class Hotel {//all bookings here for notifications
@@ -140,11 +142,18 @@ class Booking {
     vector<Room*> bookedRooms;
     Hotel* hotel;
     Guest* guest;
-    Payment* paymentused;
+    Invoice* invoice;
     Booking(Hotel* h,Guest* guest,int in,int out,vector<Room*> r);
     ~Booking();
 };
 
+class Invoice {
+    public:
+    Payment* payment;
+    // vector<Services*> additional;
+    Invoice(int amount);
+
+};
 
 class Payment {
     public:
@@ -195,8 +204,8 @@ void Guest::cancelBooking() {
 }
 Booking::Booking(Hotel* h,Guest* guest,int in,int out,vector<Room*> r):hotel(h),guest(guest),checkinTime(in),checkoutTime(out), bookedRooms(r) {
     for(auto i:r) {
-        paymentused = new Cash(r.size());
-        ((Cash*)paymentused)->pay();
+        invoice = new Invoice(r.size());
+        ((Cash*)invoice->payment)->pay();
         i->user = guest->userid;
         h->bookedRooms[i->roomName] = i;
         h->emptyRooms.erase(i->roomName);
@@ -212,7 +221,7 @@ Booking::~Booking() {
         hotel->bookedRooms.erase(i->roomName);
         int today = 0;
         if(today<checkinTime) {
-            paymentused->refund();
+        ((Cash*)invoice->payment)->refund();
         }
         for(int i=0;i<hotel->checkinBookings[checkinTime].size();i++) {
             if(hotel->checkinBookings[checkinTime][i]==this) {
@@ -257,6 +266,9 @@ void Hotel::checkAndSendNotifications() {
             }
         }
     }
+}
+Invoice::Invoice(int amount) {
+    payment = new Cash(amount);
 }
 //////////////////////////////////////////////
 int main() {
