@@ -39,8 +39,9 @@ class Room;
 class Admin;
 class Guest;
 class Booking;
+class Payment;
 //////////////////////////
-class Hotel {
+class Hotel {//all bookings here for notifications
     public:
     string name;
     Hotel(string n):name(n){};
@@ -107,19 +108,37 @@ class Booking {
     vector<Room*> bookedRooms;
     Hotel* hotel;
     string userid;
-    Booking(Hotel* h,string userid,int in,int out,vector<Room*> r):hotel(h),userid(userid),checkinTime(in),checkoutTime(out), bookedRooms(r) {
-        for(auto i:r) {
-            i->user = userid;
-            h->bookedRooms[i->roomName] = i;
-            h->emptyRooms.erase(i->roomName);
-        }
-    };
-    ~Booking() {
-        for(auto i:bookedRooms) {
-            i->user.clear();
-            hotel->emptyRooms[i->roomName] = i;
-            hotel->bookedRooms.erase(i->roomName);
-        }
+    Payment* paymentused;
+    Booking(Hotel* h,string userid,int in,int out,vector<Room*> r);
+    ~Booking();
+};
+
+
+class Payment {
+    public:
+    bool paid;
+    double amount;
+    Payment(int a):paid(false),amount(a){};
+    void refund() {
+        amount = 0;
+        paid = false;
+    }
+};
+
+class Card:public Payment {
+    public:
+    int cardNumber;
+    Card(int cn,int a):cardNumber(cn),Payment(a) {};
+    void pay() {
+        paid = true;
+    }
+};
+
+class Cash:public Payment {
+    public:
+    Cash(int a):Payment(a) {};
+    void pay() {
+        paid = true;
     }
 };
 
@@ -142,7 +161,26 @@ void Guest::addBooking(int in, int out,vector<Room*> r) {
 void Guest::cancelBooking() {
     delete booking;
 }
-
+Booking::Booking(Hotel* h,string userid,int in,int out,vector<Room*> r):hotel(h),userid(userid),checkinTime(in),checkoutTime(out), bookedRooms(r) {
+    for(auto i:r) {
+        paymentused = new Cash(r.size());
+        ((Cash*)paymentused)->pay();
+        i->user = userid;
+        h->bookedRooms[i->roomName] = i;
+        h->emptyRooms.erase(i->roomName);
+    }
+};
+Booking::~Booking() {
+    for(auto i:bookedRooms) {
+        i->user.clear();
+        hotel->emptyRooms[i->roomName] = i;
+        hotel->bookedRooms.erase(i->roomName);
+        int today = 0;
+        if(today<checkinTime) {
+            paymentused->refund();
+        }
+    }
+}
 //////////////////////////////////////////////
 int main() {
     ios_base::sync_with_stdio(0);
