@@ -34,6 +34,12 @@
 // #include <mutex> // std::mutex
 using namespace std;
 /////////////////////////////////////////////////////////////////////////
+class RoomBooking;
+class RoomKey;
+class Room;
+class RoomCharge;
+class RoomHouseKeeping;
+////////////////////////////////
 enum RoomStyle {
   STANDARD, DELUXE, FAMILY_SUITE, BUSINESS_SUITE
 };
@@ -88,7 +94,12 @@ class Person {
     string phone;
     Account account;
 };
-
+class Member:public Person {
+    private:
+    int totalRoomsCheckedIn;
+    public:
+    vector<RoomBooking> getBookings();
+};
 
 class Guest:public Person {
     private:
@@ -104,7 +115,12 @@ class Receptionist:public Person {
 };
 
 class Server:public Person {
+    public:
     bool addRoomCharge(Room room, RoomCharge roomCharge);
+};
+class HouseKeeper:public Person {
+    public:
+    bool assignToRoom(Room room);
 };
 ///////////////////////////////////////////////
 class HotelLocation {
@@ -193,19 +209,22 @@ class RoomCharge {
     bool addInvoiceItem(Invoice invoice);
 };
 
-class Amenity extends RoomCharge {
-  public String name;
-  public String description;
-}
+class Amenity:public RoomCharge {
+    public:
+    string name;
+    string description;
+};
 
-public class RoomService extends RoomCharge {
-  public boolean isChargeable;
-  public Date requestTime;
-}
+class RoomService:public RoomCharge {
+    public:
+    bool isChargeable;
+    Date requestTime;
+};
 
-public class KitchenService extends RoomCharge {
-  public String description;
-}
+class KitchenService:public RoomCharge {
+    public:
+    string description;
+};
 //////////////////////////////////////////////
 int main() {
     ios_base::sync_with_stdio(0);
