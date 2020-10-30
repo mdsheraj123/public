@@ -74,7 +74,7 @@ class Account {
 
 class Guest:public Account {
     public:
-    vector<Booking*> bookings;
+    Booking* booking;
 
     Guest(Hotel* hotel,string id):Account(hotel,id){};
 
@@ -88,6 +88,7 @@ class Guest:public Account {
     }
 
     void addBooking(int in, int out,vector<Room*> r);
+    void cancelBooking();
 };
 
 class Admin:public Account {
@@ -113,6 +114,13 @@ class Booking {
             h->emptyRooms.erase(i->roomName);
         }
     };
+    ~Booking() {
+        for(auto i:bookedRooms) {
+            i->user.clear();
+            hotel->emptyRooms[i->roomName] = i;
+            hotel->bookedRooms.erase(i->roomName);
+        }
+    }
 };
 
 
@@ -128,7 +136,11 @@ void Hotel::addGuest(string id) {
 }
 void Guest::addBooking(int in, int out,vector<Room*> r) {
     Booking* temp = new Booking(hotel,userid,in,out,r);
-    bookings.push_back(temp);
+    booking = temp;
+}
+
+void Guest::cancelBooking() {
+    delete booking;
 }
 
 //////////////////////////////////////////////
@@ -153,5 +165,8 @@ int main() {
     h.addGuest("Russian");
 
     h.guests["Russian"]->addBooking(10,11,h.guests["Russian"]->searchEmptyRooms());
+    h.guests["Russian"]->searchEmptyRooms();
+    h.guests["Russian"]->cancelBooking();
+    h.guests["Russian"]->searchEmptyRooms();
 
 }
