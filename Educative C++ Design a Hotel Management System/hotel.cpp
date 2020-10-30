@@ -40,6 +40,7 @@ class Admin;
 class Guest;
 class Booking;
 class Payment;
+class Notification;
 //////////////////////////
 class Hotel {//all bookings here for notifications
     public:
@@ -49,8 +50,13 @@ class Hotel {//all bookings here for notifications
     map<string,Room*> bookedRooms;
     map<string,Admin*> admins;
     map<string,Guest*> guests;
+
+    map<int,vector<Booking*>> checkinBookings;
+    map<int,vector<Booking*>> checkoutBookings;
+
     void addAdmin(string id);
     void addGuest(string id);
+    void checkAndSendNotifications();
 };
 class Room {
     public:
@@ -76,6 +82,7 @@ class Account {
 class Guest:public Account {
     public:
     Booking* booking;
+    vector<Notification*> notifications;
 
     Guest(Hotel* hotel,string id):Account(hotel,id){};
 
@@ -101,15 +108,40 @@ class Admin:public Account {
     }
 };
 
+
+class Notification {
+    public:
+    Notification(string m,Account* a):message(m),account(a){};
+    string message;
+    Account* account;
+    virtual void send() = 0;
+};
+
+class SMS:public Notification {
+    public:
+    SMS(string m,Account* a):Notification(m,a){};
+    void send() {
+        cout<<"SMS sent to "<<account->userid<<endl;
+    }
+};
+
+class Email:public Notification {
+    public:
+    Email(string m,Account* a):Notification(m,a){};
+    void send() {
+        cout<<"Email sent to "<<account->userid<<endl;
+    }
+};
+
 class Booking {
     public:
     int checkinTime;
     int checkoutTime;
     vector<Room*> bookedRooms;
     Hotel* hotel;
-    string userid;
+    Guest* guest;
     Payment* paymentused;
-    Booking(Hotel* h,string userid,int in,int out,vector<Room*> r);
+    Booking(Hotel* h,Guest* guest,int in,int out,vector<Room*> r);
     ~Booking();
 };
 
@@ -154,20 +186,23 @@ void Hotel::addGuest(string id) {
     guests[id] = temp;
 }
 void Guest::addBooking(int in, int out,vector<Room*> r) {
-    Booking* temp = new Booking(hotel,userid,in,out,r);
+    Booking* temp = new Booking(hotel,this,in,out,r);
     booking = temp;
 }
 
 void Guest::cancelBooking() {
     delete booking;
 }
-Booking::Booking(Hotel* h,string userid,int in,int out,vector<Room*> r):hotel(h),userid(userid),checkinTime(in),checkoutTime(out), bookedRooms(r) {
+Booking::Booking(Hotel* h,Guest* guest,int in,int out,vector<Room*> r):hotel(h),guest(guest),checkinTime(in),checkoutTime(out), bookedRooms(r) {
     for(auto i:r) {
         paymentused = new Cash(r.size());
         ((Cash*)paymentused)->pay();
-        i->user = userid;
+        i->user = guest->userid;
         h->bookedRooms[i->roomName] = i;
         h->emptyRooms.erase(i->roomName);
+
+        hotel->checkinBookings[in].push_back(this);
+        hotel->checkoutBookings[out].push_back(this);
     }
 };
 Booking::~Booking() {
@@ -178,6 +213,48 @@ Booking::~Booking() {
         int today = 0;
         if(today<checkinTime) {
             paymentused->refund();
+        }
+        for(int i=0;i<hotel->checkinBookings[checkinTime].size();i++) {
+            if(hotel->checkinBookings[checkinTime][i]==this) {
+                hotel->checkinBookings[checkinTime].erase(hotel->checkinBookings[checkinTime].begin()+i);
+                break;
+            }
+        }
+        for(int i=0;i<hotel->checkoutBookings[checkoutTime].size();i++) {
+            if(hotel->checkoutBookings[checkoutTime][i]==this) {
+                hotel->checkoutBookings[checkoutTime].erase(hotel->checkoutBookings[checkoutTime].begin()+i);
+                break;
+            }
+        }
+    }
+}
+
+
+void Hotel::checkAndSendNotifications() {
+    int currentdate = 0;
+    for(auto i:checkinBookings) {
+        if(i.first>=currentdate) {
+            for(int j=0;j<i.second.size();j++) {
+                Notification* temp = new Email("Checkin time is near",(i.second[j])->guest);
+                ((i.second[j])->guest)->notifications.push_back(temp);
+                temp->send();
+                Notification* temp2 = new SMS("Checkin time is near",(i.second[j])->guest);
+                ((i.second[j])->guest)->notifications.push_back(temp2);
+                temp2->send();
+            }
+        }
+    }
+
+    for(auto i:checkoutBookings) {
+        if(i.first>=currentdate) {
+            for(int j=0;j<i.second.size();j++) {
+                Notification* temp = new Email("Checkin time is near",(i.second[j])->guest);
+                ((i.second[j])->guest)->notifications.push_back(temp);
+                temp->send();
+                Notification* temp2 = new SMS("Checkin time is near",(i.second[j])->guest);
+                ((i.second[j])->guest)->notifications.push_back(temp2);
+                temp2->send();
+            }
         }
     }
 }
@@ -204,7 +281,8 @@ int main() {
 
     h.guests["Russian"]->addBooking(10,11,h.guests["Russian"]->searchEmptyRooms());
     h.guests["Russian"]->searchEmptyRooms();
-    h.guests["Russian"]->cancelBooking();
-    h.guests["Russian"]->searchEmptyRooms();
+    // h.guests["Russian"]->cancelBooking();
+    // h.guests["Russian"]->searchEmptyRooms();
+    h.checkAndSendNotifications();
 
 }
