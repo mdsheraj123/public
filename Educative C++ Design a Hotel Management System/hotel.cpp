@@ -43,6 +43,8 @@ class Payment;
 class Invoice;
 class Cash;
 class Notification;
+class Services;
+class HouseKeeping;
 //////////////////////////
 class Hotel {//all bookings here for notifications
     public:
@@ -158,9 +160,31 @@ class Booking {
 class Invoice {
     public:
     Payment* payment;
-    // vector<Services*> additional;
+    vector<Services*> additional;
     Invoice(int amount);
+    void addService();
+};
 
+class Services {
+    public:
+    int charge;
+    Services(int c):charge(c){};
+};
+
+class RoomService:public Services {
+    public:
+    RoomService():Services(100){};
+};
+
+class KitchenService:public Services {
+    public:
+    KitchenService():Services(50){};
+};
+
+
+class Amenity:public Services {
+    public:
+    Amenity():Services(10){};
 };
 
 class Payment {
@@ -277,6 +301,13 @@ void Hotel::checkAndSendNotifications() {
 }
 Invoice::Invoice(int amount) {
     payment = new Cash(amount);
+}
+
+
+void Invoice::addService() {
+    Services* temp = new RoomService();
+    additional.push_back(temp);
+    payment->amount+=100;
 }
 //////////////////////////////////////////////
 int main() {
