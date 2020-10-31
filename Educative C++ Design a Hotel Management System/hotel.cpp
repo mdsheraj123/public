@@ -203,7 +203,8 @@ class Card:public Payment {
     int cardNumber;
     Card(int cn,int a):cardNumber(cn),Payment(a) {};
     void pay() {
-        paid = true;
+        amount = 0;
+        paid = false;
     }
 };
 
@@ -211,7 +212,8 @@ class Cash:public Payment {
     public:
     Cash(int a):Payment(a) {};
     void pay() {
-        paid = true;
+        amount = 0;
+        paid = false;
     }
 };
 
