@@ -64,6 +64,7 @@ class Room {
     public:
     string roomName;
     string user;
+    vector<HouseKeeping*> log;
     Room(string n):roomName(n) {};
 };
 
@@ -72,6 +73,13 @@ class Standard:public Room {
 };
 class Deluxe:public Room {
 
+};
+
+class HouseKeeping {
+    public:
+    int doneon;
+    string des;
+    HouseKeeping(string d,int t):des(d),doneon(t){};
 };
 
 class Account {
