@@ -189,12 +189,12 @@ class Amenity:public Services {
 
 class Payment {
     public:
-    bool paid;
+    double paidAmount;
     double amount;
-    Payment(int a):paid(false),amount(a){};
+    Payment(int a):paidAmount(0),amount(a){};
     void refund() {
         amount = 0;
-        paid = false;
+        paidAmount = 0;
     }
 };
 
@@ -203,8 +203,7 @@ class Card:public Payment {
     int cardNumber;
     Card(int cn,int a):cardNumber(cn),Payment(a) {};
     void pay() {
-        amount = 0;
-        paid = false;
+        paidAmount = amount;
     }
 };
 
@@ -212,8 +211,7 @@ class Cash:public Payment {
     public:
     Cash(int a):Payment(a) {};
     void pay() {
-        amount = 0;
-        paid = false;
+        paidAmount = amount;
     }
 };
 
